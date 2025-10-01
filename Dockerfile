@@ -9,7 +9,11 @@ COPY package*.json ./
 RUN npm install
 
 # stage 2: final image
-FROM node:latest
+FROM node:18-slim
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # 1. Create user with down permissions
 RUN adduser --system --uid 1001 nodejs_use
