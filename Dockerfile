@@ -1,13 +1,15 @@
 # stage 1: Build (intall dependences)
 FROM node:latest AS builder
 
+
+
 WORKDIR /app
 COPY package*.json ./
 
 RUN npm install
 
 # stage 2: final image
-FROM node:18-slim
+FROM node:latest
 
 # 1. Create user with down permissions
 RUN adduser --system --uid 1001 nodejs_use
