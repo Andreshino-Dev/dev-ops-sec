@@ -1,17 +1,19 @@
 # stage 1: BUILD (Install dependencies)
 # Usar una versión LTS específica para builds determinísticos
 # Mantenemos esta en -slim por velocidad de npm install
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
+
 RUN npm install
+
 
 # stage 2: PRODUCTION (Final Hardened Image - ¡Cambiamos a Alpine!)
 # Alpine ofrece la mínima superficie de ataque.
-FROM node:18-alpine
+FROM node:22-alpine
 
 # 1. ACTUALIZACIÓN CRÍTICA DE SEGURIDAD (Adaptada a Alpine - usa 'apk'):
 #    - 'update' (actualiza los repositorios)
