@@ -1,7 +1,5 @@
 # stage 1: Build (intall dependences)
-FROM node:18-alpine AS builder
-
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+FROM node:latest AS builder
 
 WORKDIR /app
 COPY package*.json ./
