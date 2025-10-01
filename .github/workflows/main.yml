@@ -1,6 +1,9 @@
+# .github/workflows/main.yml
+
 name: DevSecOps Image Scan Pipeline
 
-# Trigger on push to main/master and pull requests
+# Dispara este workflow en cada push al branch principal (main/master)
+# y en cada Pull Request (PR) contra el branch principal.
 on:
   push:
     branches: [ "main", "master" ]
@@ -9,45 +12,38 @@ on:
 
 jobs:
   trivy_scan:
+    # Ejecutar en el sistema operativo Ubuntu
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      # Step 1: Build Docker Image
+      
+      # Paso 1: Construir la imagen de Docker
       - name: Build Docker Image
         id: build-image
         run: docker build -t mi-app-test:latest .
 
-      # Step 2: Install Trivy
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      # Step 3: Cache Trivy DB for faster scans
-      - name: Cache Trivy DB
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/trivy
-          key: ${{ runner.os }}-trivy-db
-          restore-keys: |
-            ${{ runner.os }}-trivy-db
-      
-      # Step 4: Run Trivy scan with more detailed output
+      # Paso 2: Escaneo de Vulnerabilidades con Trivy
+      # Usaremos una Action preconstruida que facilita la integración
       - name: Run Trivy vulnerability scanner
-        continue-on-error: true  # Continue to next step even if vulnerabilities are found
-        run: |
-          # First run: Get full report (but don't fail yet)
-          trivy image --severity CRITICAL,HIGH --format table --output trivy-results.txt --ignore-unfixed mi-app-test:latest
-          
-          # Show the full report
-          cat trivy-results.txt
-          
-          # Second run: Just check for vulnerabilities (will fail if any found)
-          trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --no-progress mi-app-test:latest
+        uses: aquasecurity/trivy-action@master
+        with:
+          # 1. ¿Qué vamos a escanear? (Nuestra imagen construida)
+          image-ref: 'mi-app-test:latest'
+
+          # 2. Formato de salida (table es fácil de leer)
+          format: 'table'
+
+          # 3. CRITERIO DE FALLO (Policy as Code en acción)
+          # Esto es CLAVE. Le dice a Trivy que si encuentra una vulnerabilidad
+          # CRITICAL o HIGH, el workflow debe FALLAR.
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+          # 4. Enviar el resultado al log de la Action
+          output: 'trivy-results.txt'
+
+      # Paso 3: Opcional - Mostrar el resultado del escaneo
+      - name: Show Trivy results
+        run: cat trivy-results.txt
